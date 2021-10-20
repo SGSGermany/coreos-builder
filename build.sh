@@ -80,6 +80,17 @@ cmd buildah config \
     --user "coreos-builder" \
     "$CONTAINER"
 
+cmd buildah config \
+    --annotation org.opencontainers.image.title="CoreOS Builder" \
+    --annotation org.opencontainers.image.description="A container to ease reprovisioning bare metal CoreOS instances." \
+    --annotation org.opencontainers.image.url="https://github.com/SGSGermany/coreos-builder" \
+    --annotation org.opencontainers.image.authors="SGS Serious Gaming & Simulations GmbH" \
+    --annotation org.opencontainers.image.vendor="SGS Serious Gaming & Simulations GmbH" \
+    --annotation org.opencontainers.image.licenses="MIT" \
+    --annotation org.opencontainers.image.base.name="$BASE_IMAGE" \
+    --annotation org.opencontainers.image.base.digest="$(podman image inspect --format '{{.Digest}}' "$BASE_IMAGE")" \
+    "$CONTAINER"
+
 cmd buildah commit "$CONTAINER" "$IMAGE:${TAGS[0]}"
 cmd buildah rm "$CONTAINER"
 
