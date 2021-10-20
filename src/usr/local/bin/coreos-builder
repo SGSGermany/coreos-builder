@@ -1,0 +1,52 @@
+#!/bin/bash
+# coreos-builder
+# A container to ease reprovisioning bare metal CoreOS instances.
+#
+# Copyright (c) 2021  SGS Serious Gaming & Simulations GmbH
+#
+# This work is licensed under the terms of the MIT license.
+# For a copy, see LICENSE file or <https://opensource.org/licenses/MIT>.
+#
+# SPDX-License-Identifier: MIT
+# License-Filename: LICENSE
+
+set -e
+
+APP_PATH="/var/local/coreos-builder"
+
+INSTALLER_SRC_PATH="/usr/local/src/coreos-installer"
+INSTALLER_TARGET="x86_64-unknown-linux-gnu"
+
+# build coreos-installer
+echo "Building \`coreos-installer\`..."
+
+if [ -d "$INSTALLER_SRC_PATH" ]; then
+    echo "Removing old sources..."
+    rm -rf "$INSTALLER_SRC_PATH"/*
+fi
+
+echo "Downloading sources from crates.io..."
+cd "$INSTALLER_SRC_PATH"
+cargo download -x coreos-installer
+
+echo "Building \`coreos-installer\`..."
+cd *
+cargo build --release --target "$INSTALLER_TARGET"
+
+echo "Successfully built \`coreos-installer\`"
+./target/"$INSTALLER_TARGET"/release/coreos-installer --version
+
+echo "Copying \`coreos-installer\` binary..."
+cp ./target/"$INSTALLER_TARGET"/release/coreos-installer "$APP_PATH/coreos-installer"
+
+echo
+
+# download image
+echo "Downloading CoreOS image..."
+cd "$APP_PATH"
+./coreos-installer download --directory "$APP_PATH"
+
+echo "Symlinking latest CoreOS image..."
+LATEST_IMAGE="$(find "$APP_PATH" -name 'fedora-coreos-*.x86_64.raw.xz' -type f -printf '%f\0' | sort -z -r | cut -d $'\0' -f 1)"
+ln -f -s "$LATEST_IMAGE" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz"
+ln -f -s "$LATEST_IMAGE.sig" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz.sig"
