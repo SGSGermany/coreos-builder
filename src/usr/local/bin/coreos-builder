@@ -10,43 +10,72 @@
 # SPDX-License-Identifier: MIT
 # License-Filename: LICENSE
 
-set -e
+set -eu -o pipefail
+shopt -s nullglob
 
 APP_PATH="/var/local/coreos-builder"
 
 INSTALLER_SRC_PATH="/usr/local/src/coreos-installer"
 INSTALLER_TARGET="x86_64-unknown-linux-gnu"
 
-# build coreos-installer
-echo "Building \`coreos-installer\`..."
+print_usage() {
+    echo "Usage:"
+    echo "  $(basename "$0") [--no-build-installer] [--no-download-image]"
+}
 
-if [ -d "$INSTALLER_SRC_PATH" ]; then
-    echo "Removing old sources..."
-    rm -rf "$INSTALLER_SRC_PATH"/*
+BUILD_INSTALLER="yes"
+DOWNLOAD_IMAGE="yes"
+while [ $# -gt 0 ]; do
+    case "$1" in
+        "--no-build-installer")
+            BUILD_INSTALLER="no"
+            ;;
+
+        "--no-download-image")
+            DOWNLOAD_IMAGE="no"
+            ;;
+
+        *)
+            print_usage >&2
+            exit 1
+    esac
+    shift
+done
+
+# build coreos-installer
+if [ "$BUILD_INSTALLER" == "yes" ]; then
+    echo "Building \`coreos-installer\`..."
+
+    if [ -d "$INSTALLER_SRC_PATH" ]; then
+        echo "Removing old sources..."
+        rm -rf "$INSTALLER_SRC_PATH"/*
+    fi
+
+    echo "Downloading sources from crates.io..."
+    cd "$INSTALLER_SRC_PATH"
+    cargo download -x coreos-installer
+
+    echo "Building \`coreos-installer\`..."
+    cd *
+    cargo build --release --target "$INSTALLER_TARGET"
+
+    echo "Successfully built \`coreos-installer\`"
+    ./target/"$INSTALLER_TARGET"/release/coreos-installer --version
+
+    echo "Copying \`coreos-installer\` binary..."
+    cp ./target/"$INSTALLER_TARGET"/release/coreos-installer "$APP_PATH/coreos-installer"
+
+    [ "$DOWNLOAD_IMAGE" != "yes" ] || echo
 fi
 
-echo "Downloading sources from crates.io..."
-cd "$INSTALLER_SRC_PATH"
-cargo download -x coreos-installer
-
-echo "Building \`coreos-installer\`..."
-cd *
-cargo build --release --target "$INSTALLER_TARGET"
-
-echo "Successfully built \`coreos-installer\`"
-./target/"$INSTALLER_TARGET"/release/coreos-installer --version
-
-echo "Copying \`coreos-installer\` binary..."
-cp ./target/"$INSTALLER_TARGET"/release/coreos-installer "$APP_PATH/coreos-installer"
-
-echo
-
 # download image
-echo "Downloading CoreOS image..."
-cd "$APP_PATH"
-./coreos-installer download --directory "$APP_PATH"
+if [ "$DOWNLOAD_IMAGE" == "yes" ]; then
+    echo "Downloading CoreOS image..."
+    cd "$APP_PATH"
+    ./coreos-installer download --directory "$APP_PATH"
 
-echo "Symlinking latest CoreOS image..."
-LATEST_IMAGE="$(find "$APP_PATH" -name 'fedora-coreos-*.x86_64.raw.xz' -type f -printf '%f\0' | sort -z -r | cut -d $'\0' -f 1)"
-ln -f -s "$LATEST_IMAGE" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz"
-ln -f -s "$LATEST_IMAGE.sig" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz.sig"
+    echo "Symlinking latest CoreOS image..."
+    LATEST_IMAGE="$(find "$APP_PATH" -name 'fedora-coreos-*.x86_64.raw.xz' -type f -printf '%f\0' | sort -z -r | cut -d $'\0' -f 1)"
+    ln -f -s "$LATEST_IMAGE" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz"
+    ln -f -s "$LATEST_IMAGE.sig" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz.sig"
+fi
