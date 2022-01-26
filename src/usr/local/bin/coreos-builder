@@ -20,11 +20,12 @@ INSTALLER_TARGET="x86_64-unknown-linux-gnu"
 
 print_usage() {
     echo "Usage:"
-    echo "  $(basename "$0") [--no-build-installer] [--no-download-image]"
+    echo "  $(basename "$0") [--no-build-installer] [--no-download-image] [--no-cleanup]"
 }
 
 BUILD_INSTALLER="yes"
 DOWNLOAD_IMAGE="yes"
+CLEANUP_IMAGES="yes"
 while [ $# -gt 0 ]; do
     case "$1" in
         "--no-build-installer")
@@ -33,6 +34,10 @@ while [ $# -gt 0 ]; do
 
         "--no-download-image")
             DOWNLOAD_IMAGE="no"
+            ;;
+
+        "--no-cleanup")
+            CLEANUP_IMAGES="no"
             ;;
 
         *)
@@ -65,7 +70,7 @@ if [ "$BUILD_INSTALLER" == "yes" ]; then
     echo "Copying \`coreos-installer\` binary..."
     cp ./target/"$INSTALLER_TARGET"/release/coreos-installer "$APP_PATH/coreos-installer"
 
-    [ "$DOWNLOAD_IMAGE" != "yes" ] || echo
+    [ "$DOWNLOAD_IMAGE" != "yes" ] && [ "$CLEANUP_IMAGES" != "yes" ] || echo
 fi
 
 # download image
@@ -78,4 +83,18 @@ if [ "$DOWNLOAD_IMAGE" == "yes" ]; then
     LATEST_IMAGE="$(find "$APP_PATH" -name 'fedora-coreos-*.x86_64.raw.xz' -type f -printf '%f\0' | sort -z -r | cut -d $'\0' -f 1)"
     ln -f -s "$LATEST_IMAGE" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz"
     ln -f -s "$LATEST_IMAGE.sig" "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz.sig"
+
+    [ "$CLEANUP_IMAGES" != "yes" ] || echo
+fi
+
+# cleanup images
+if [ "$CLEANUP_IMAGES" == "yes" ]; then
+    echo "Cleaning up old CoreOS images..."
+    LATEST_IMAGE="$(readlink "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz")"
+    for IMAGE in "$APP_PATH/fedora-coreos-"*".x86_64.raw.xz"; do
+        IMAGE_NAME="$(basename "$IMAGE")"
+        if [ "$IMAGE_NAME" != "fedora-coreos-latest.x86_64.raw.xz" ] && [ "$IMAGE_NAME" != "$LATESET_IMAGE" ]; then
+            rm -f "$IMAGE" "$IMAGE.sig"
+        fi
+    done
 fi
