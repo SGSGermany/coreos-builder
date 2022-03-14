@@ -93,7 +93,7 @@ if [ "$CLEANUP_IMAGES" == "yes" ]; then
     LATEST_IMAGE="$(readlink "$APP_PATH/fedora-coreos-latest.x86_64.raw.xz")"
     for IMAGE in "$APP_PATH/fedora-coreos-"*".x86_64.raw.xz"; do
         IMAGE_NAME="$(basename "$IMAGE")"
-        if [ "$IMAGE_NAME" != "fedora-coreos-latest.x86_64.raw.xz" ] && [ "$IMAGE_NAME" != "$LATESET_IMAGE" ]; then
+        if [ "$IMAGE_NAME" != "fedora-coreos-latest.x86_64.raw.xz" ] && [ "$IMAGE_NAME" != "$LATEST_IMAGE" ]; then
             rm -f "$IMAGE" "$IMAGE.sig"
         fi
     done
