@@ -61,7 +61,7 @@ if [ "$BUILD_INSTALLER" == "yes" ]; then
     cargo download -x coreos-installer
 
     echo "Building \`coreos-installer\`..."
-    cd *
+    cd coreos-installer-*
     cargo build --release --target "$INSTALLER_TARGET"
 
     echo "Successfully built \`coreos-installer\`"
@@ -77,7 +77,7 @@ fi
 if [ "$DOWNLOAD_IMAGE" == "yes" ]; then
     echo "Downloading CoreOS image..."
     cd "$APP_PATH"
-    ./coreos-installer download --directory "$APP_PATH"
+    ./coreos-installer download --directory "$APP_PATH" --format "raw.xz"
 
     echo "Symlinking latest CoreOS image..."
     LATEST_IMAGE="$(find "$APP_PATH" -name 'fedora-coreos-*.x86_64.raw.xz' -type f -printf '%f\0' | sort -z -r | cut -d $'\0' -f 1)"
