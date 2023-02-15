@@ -51,6 +51,7 @@ pkg_install "$CONTAINER" \
     gcc \
     libc6-dev \
     libssl-dev \
+    libzstd-dev \
     pkg-config
 
 cmd buildah run "$CONTAINER" -- \
