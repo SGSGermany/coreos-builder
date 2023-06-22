@@ -11,7 +11,7 @@
 # License-Filename: LICENSE
 
 set -eu -o pipefail
-export LC_ALL=C
+export LC_ALL=C.UTF-8
 
 [ -v CI_TOOLS ] && [ "$CI_TOOLS" == "SGSGermany" ] \
     || { echo "Invalid build environment: Environment variable 'CI_TOOLS' not set or invalid" >&2; exit 1; }
@@ -70,15 +70,17 @@ cmd buildah config \
     "$CONTAINER"
 
 echo + "mkdir …/usr/local/rustup …/usr/local/cargo" >&2
-mkdir "$MOUNT/usr/local/rustup" \
+mkdir \
+    "$MOUNT/usr/local/rustup" \
     "$MOUNT/usr/local/cargo"
 
 echo + "chmod -R a+w …/usr/local/rustup …/usr/local/cargo" >&2
-chmod -R a+w "$MOUNT/usr/local/rustup" \
+chmod -R a+w \
+    "$MOUNT/usr/local/rustup" \
     "$MOUNT/usr/local/cargo"
 
 cmd buildah run "$CONTAINER" -- \
-    sh -c 'curl -sSf https://sh.rustup.rs | sh -s -- --profile minimal --no-modify-path -y'
+    sh -c 'curl -sSf https://sh.rustup.rs | sh -s -- --quiet --profile minimal --no-modify-path -y'
 
 cmd buildah run "$CONTAINER" -- \
     cargo install cargo-download
@@ -100,8 +102,8 @@ cmd buildah config \
 
 cmd buildah config \
     --workingdir "/var/local/coreos-builder" \
+    --entrypoint '[ "/entrypoint.sh" ]' \
     --cmd '[ "coreos-builder" ]' \
-    --user "coreos-builder" \
     "$CONTAINER"
 
 cmd buildah config \

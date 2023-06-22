@@ -29,7 +29,7 @@ and run `coreos-installer install` with the `--image-file` option.
 `coreos-installer` is built from the latest [crates.io][4] sources. Running
 this container will always give you the latest version of `coreos-installer`.
 Due to the nature of this container, it doesn't need frequent rebuilds.
-Thus it is rebuild only once a month, precisely on the 15th day at 22:20 UTC.
+Thus it is rebuild only once a month, precisely on the 12th day at 21:50 UTC.
 
 [1]: https://getfedora.org/en/coreos/
 [2]: ./src/usr/local/bin/coreos-builder

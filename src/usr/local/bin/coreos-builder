@@ -11,6 +11,7 @@
 # License-Filename: LICENSE
 
 set -eu -o pipefail
+export LC_ALL=C.UTF-8
 shopt -s nullglob
 
 APP_PATH="/var/local/coreos-builder"
@@ -47,11 +48,16 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+if [ "$(id -u)" != "$(stat -c %u "$APP_PATH")" ]; then
+    echo "You must run \`coreos-builder\` as user '$(stat -c %U "$APP_PATH")'" >&2
+    exit 1
+fi
+
 # build coreos-installer
 if [ "$BUILD_INSTALLER" == "yes" ]; then
     echo "Building \`coreos-installer\`..."
 
-    if [ -d "$INSTALLER_SRC_PATH" ]; then
+    if [ -n "$(find "$INSTALLER_SRC_PATH" -mindepth 0 -maxdepth 0 -not -empty)" ]; then
         echo "Removing old sources..."
         rm -rf "$INSTALLER_SRC_PATH"/*
     fi
@@ -94,6 +100,7 @@ if [ "$CLEANUP_IMAGES" == "yes" ]; then
     for IMAGE in "$APP_PATH/fedora-coreos-"*".x86_64.raw.xz"; do
         IMAGE_NAME="$(basename "$IMAGE")"
         if [ "$IMAGE_NAME" != "fedora-coreos-latest.x86_64.raw.xz" ] && [ "$IMAGE_NAME" != "$LATEST_IMAGE" ]; then
+            echo "Removing '$IMAGE_NAME'..."
             rm -f "$IMAGE" "$IMAGE.sig"
         fi
     done
