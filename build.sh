@@ -109,6 +109,7 @@ cmd buildah config \
 cmd buildah config \
     --annotation org.opencontainers.image.title="CoreOS Builder" \
     --annotation org.opencontainers.image.description="A container to ease reprovisioning bare metal CoreOS instances." \
+    --annotation org.opencontainers.image.version- \
     --annotation org.opencontainers.image.url="https://github.com/SGSGermany/coreos-builder" \
     --annotation org.opencontainers.image.authors="SGS Serious Gaming & Simulations GmbH" \
     --annotation org.opencontainers.image.vendor="SGS Serious Gaming & Simulations GmbH" \
